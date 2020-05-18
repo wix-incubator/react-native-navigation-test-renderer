@@ -1,0 +1,30 @@
+{
+  "name": "react-native-navigation-test-renderer",
+  "version": "0.0.1",
+  "license": "ISC",
+  "description": "Allows developers to render RNN screens without depending on the native hierarchy maintained by RNN.",
+  "author": {
+    "name": "Tzelon Machluf",
+    "email": "tzelonm@wix.com"
+  },
+  "devDependencies": {
+    "@testing-library/react-native": "^5.0.3",
+    "@types/jest": "^24.0.0",
+    "@types/node": "^8.0.0",
+    "@types/react": "^16.9.35",
+    "@types/react-native": "^0.62.10",
+    "babel-jest": "^26.0.0",
+    "jest": "^26.0.0",
+    "react": "^16.13.0",
+    "react-native": "^0.62.2",
+    "react-test-renderer": "^16.13.1",
+    "ts-jest": "^26.0.0",
+    "react-native-navigation": "^6.6.0",
+    "typescript": "^3.9.2"
+  },
+  "peerDependencies": {
+    "react": ">=16.13.0",
+    "react-native": ">=0.62.0",
+    "react-native-navigation": ">=6.6.0"
+  }
+}
