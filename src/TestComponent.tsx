@@ -29,4 +29,5 @@ class TestComponent extends React.Component<PropTypes, {}> {
     return <Screen />;
   }
 }
+
 export default withNativeNavigation<PropTypes>()(TestComponent);

@@ -6,14 +6,14 @@ enum Event {
 }
 
 type Callback = (data: EventData) => void;
-interface EventData {
+export interface EventData {
   component: LayoutComponent;
 }
 
 class NativeNavigationMock {
   private screenStack: LayoutComponent[];
   private registedScreens: Map<
-    string,
+    string | number,
     {
       componentProvider: () => React.ElementType
       // componentDidAppear?: () => void;
@@ -27,7 +27,7 @@ class NativeNavigationMock {
 
   constructor() {
     this.screenStack = [];
-    this.registedScreens = new Map();
+    this.registedScreens = new Map<string | number, any>();
     this.subscribers = {
       [Event.NEW_SCREEN]: []
     };
@@ -123,7 +123,7 @@ class NativeNavigationMock {
     return this.screenStack[this.screenStack.length - 1];
   }
 
-  getRegistedScreen(name: string) {
+  getRegistedScreen(name: string | number) {
     return this.registedScreens.get(name)
   }
   private callComponentDidAppear(componentId: string | number) {
@@ -172,7 +172,8 @@ export function withNativeNavigation<T extends NavigationProps>() {
 
       render() {
         const component = this.state.component || this.props.component;
-        const Screen = nativeNavigationMock.getRegistedScreen(component.name).componentProvider()
+        const Screen = nativeNavigationMock.getRegistedScreen(component.name ?? "not_found")?.componentProvider()
+        //@ts-ignore
         return <WrappedComponent {...this.props} screen={() => <Screen {...component.passProps}/>} />;
       }
     };

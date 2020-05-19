@@ -7,6 +7,15 @@
     "name": "Tzelon Machluf",
     "email": "tzelonm@wix.com"
   },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare" : "npm run build"
+  },
+  "types": "dist/index.d.ts",
+  "main": "dist/index.js",
   "devDependencies": {
     "@testing-library/react-native": "^5.0.3",
     "@types/jest": "^24.0.0",

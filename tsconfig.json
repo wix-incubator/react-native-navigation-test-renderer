@@ -1,22 +1,21 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "module": "esnext",
+    "module": "commonjs",
     "jsx": "react-native",
-    "esModuleInterop": true,
     "declaration": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "outDir": "./dist/",
     "sourceMap": true,
-    "noImplicitAny": false,
-    "moduleResolution": "node",
+    "strict": true,
     "importHelpers": true,
-    "lib": ["dom", "esnext"]
+    "types": [
+      "jest",
+      "react",
+      "react-native"
+    ]
   },
-  "include": [
-    "./__tests__/**/*.ts"
-  ],
-  "files": [
-    "./src/index.ts"
-  ]
+  "include": ["src"]
 }
