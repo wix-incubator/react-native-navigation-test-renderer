@@ -1,7 +1,7 @@
 {
   "name": "react-native-navigation-test-renderer",
   "version": "0.0.1",
-  "license": "ISC",
+  "license": "MIT",
   "description": "Allows developers to render RNN screens without depending on the native hierarchy maintained by RNN.",
   "author": {
     "name": "Tzelon Machluf",
