@@ -1,7 +1,7 @@
 import React from "react";
 import { render, wait, fireEvent } from "@testing-library/react-native";
-import { TestComponent } from "../../src";
-import "../register_screens"
+import TestComponent from "../TestComponent";
+import "../registerScreens"
 
 describe("Navigation between screens", () => {
   it("should move between screens", async () => {

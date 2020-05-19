@@ -1,5 +1,8 @@
 import React from "react";
+import { Text } from 'react-native';
 import { LayoutComponent } from "react-native-navigation";
+import { Subtract } from 'utility-types';
+
 
 enum Event {
   NEW_SCREEN = "newscreen"
@@ -126,6 +129,7 @@ class NativeNavigationMock {
   getRegistedScreen(name: string | number) {
     return this.registedScreens.get(name)
   }
+
   private callComponentDidAppear(componentId: string | number) {
     // call the current screen disappear event
     const component = this.registedScreens.get(String(componentId));
@@ -141,16 +145,36 @@ class NativeNavigationMock {
 
 const nativeNavigationMock = new NativeNavigationMock();
 
+
+
+export interface InjectedNavigationProps {
+  Screen: React.ComponentType
+}
 export interface NavigationProps {
   component: LayoutComponent;
 }
 
-export function withNativeNavigation<T extends NavigationProps>() {
-  return function(WrappedComponent: any) {
-    return class NativeNavigationMockProvider extends React.PureComponent<T> {
+export interface NavigationState {
+  currentComponent?: LayoutComponent ;
+}
+
+export function withNativeNavigation<T extends InjectedNavigationProps>(
+  WrappedComponent: React.ComponentType<T>
+) {
+    return class NativeNavigationMockProvider extends React.Component<
+      Subtract<T, InjectedNavigationProps> & NavigationProps,
+      NavigationState
+    > {
+
+      constructor(props: any, context: any) {
+        super(props, context);
+        nativeNavigationMock.push("__START_COMPONENT__", { component: props.component });
+      }
+
       state = {
-        component: null
+        currentComponent: undefined
       };
+
       UNSAFE_componentWillMount() {
         nativeNavigationMock.addEventListener(
           Event.NEW_SCREEN,
@@ -166,18 +190,22 @@ export function withNativeNavigation<T extends NavigationProps>() {
 
       handleNewScreenEvent = (e: EventData) => {
         this.setState({
-          component: e.component
+          currentComponent: e.component
         });
       };
 
       render() {
-        const component = this.state.component || this.props.component;
+        const component = this.state.currentComponent || this.props.component;
         const Screen = nativeNavigationMock.getRegistedScreen(component.name ?? "not_found")?.componentProvider()
-        //@ts-ignore
-        return <WrappedComponent {...this.props} screen={() => <Screen {...component.passProps}/>} />;
+        const { component: comp, ...props } = this.props
+        if (Screen) {
+          return <WrappedComponent {...props as unknown as T} Screen={() => <Screen {...component.passProps}/>} />;
+        }
+        throw new Error(`No screnn named ${component.name} registered`)
+
       }
     };
   };
-}
+
 
 export default nativeNavigationMock;

@@ -1,6 +1,6 @@
 {
   "name": "react-native-navigation-test-renderer",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "MIT",
   "description": "Allows developers to render RNN screens without depending on the native hierarchy maintained by RNN.",
   "author": {
@@ -12,7 +12,8 @@
   ],
   "scripts": {
     "build": "tsc",
-    "prepare" : "npm run build"
+    "watch": "tsc -w",
+    "prepare": "npm run build"
   },
   "types": "dist/index.d.ts",
   "main": "dist/index.js",
@@ -26,10 +27,11 @@
     "jest": "^26.0.0",
     "react": "^16.13.0",
     "react-native": "^0.62.2",
+    "react-native-navigation": "^6.6.0",
     "react-test-renderer": "^16.13.1",
     "ts-jest": "^26.0.0",
-    "react-native-navigation": "^6.6.0",
-    "typescript": "^3.9.2"
+    "typescript": "^3.9.2",
+    "utility-types": "^3.10.0"
   },
   "peerDependencies": {
     "react": ">=16.13.0",

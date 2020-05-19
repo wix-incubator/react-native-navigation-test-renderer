@@ -1,7 +1,7 @@
 import React from "react";
 //@ts-ignore
 import { render, wait, fireEvent } from "@testing-library/react-native";
-import TestComponent from "../../src/TestComponent";
+import TestComponent from "../TestComponent";
 import NavigationMock from "../../src/NavigationMock";
 
 xdescribe("Events Screens", () => {
