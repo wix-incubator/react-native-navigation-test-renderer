@@ -1,11 +1,12 @@
 import React from "react";
 import { Text } from 'react-native';
-import { LayoutComponent } from "react-native-navigation";
+import { LayoutComponent, Options } from "react-native-navigation";
 import { Subtract } from 'utility-types';
 
 
 enum Event {
-  NEW_SCREEN = "newscreen"
+  PUSH_SCREEN = "push_screen",
+  POP_SCREEN = "pop_screen"
 }
 
 type Callback = (data: EventData) => void;
@@ -15,24 +16,17 @@ export interface EventData {
 
 class NativeNavigationMock {
   private screenStack: LayoutComponent[];
-  private registedScreens: Map<
-    string | number,
-    {
-      componentProvider: () => React.ElementType
-      // componentDidAppear?: () => void;
-      // componentDidDisappear?: () => void;
-      // isMounted: () => void;
-    }
-  >;
-  private subscribers: {
-    [index in Event]: Callback[];
-  };
+  private registedScreens: Map<string | number,{ componentProvider: () => React.ElementType}>;
+  private subscribers: { [index in Event]: Callback[] };
+  private componentIdCounter = 0;
+
 
   constructor() {
     this.screenStack = [];
     this.registedScreens = new Map<string | number, any>();
     this.subscribers = {
-      [Event.NEW_SCREEN]: []
+      [Event.PUSH_SCREEN]: [],
+      [Event.POP_SCREEN]: []
     };
   }
 
@@ -52,9 +46,9 @@ class NativeNavigationMock {
     });
   }
 
-  push(currentScreen: string, { component }: { component: LayoutComponent }) {
+  push(componentId: string, { component }: { component: LayoutComponent }) {
     // call the current screen disappear event
-    this.callComponentDidDisappear(currentScreen ?? "");
+    this.callComponentDidDisappear(componentId);
 
     // push the new screen
     this.screenStack.push(component);
@@ -62,10 +56,11 @@ class NativeNavigationMock {
     // call the new screen appear event
     this.callComponentDidAppear(component.name);
 
-    this.dispatchEvent(Event.NEW_SCREEN, { component });
+    this.dispatchEvent(Event.PUSH_SCREEN, { component });
   }
 
-  pop() {
+  // https://wix.github.io/react-native-navigation/docs/stack/#interact-with-the-stack-by-componentid
+  pop(componentId: string, mergeOptions?: Options) {
     // pop the current screen
     const currentScreen = this.screenStack.pop();
 
@@ -77,7 +72,7 @@ class NativeNavigationMock {
     // call the new screen appear event
     this.callComponentDidAppear(newScreen.name);
 
-    this.dispatchEvent(Event.NEW_SCREEN, {
+    this.dispatchEvent(Event.POP_SCREEN, {
       component: newScreen
     });
     return this.currentScreen;
@@ -141,6 +136,12 @@ class NativeNavigationMock {
     const component = this.registedScreens.get(String(componentId));
     // component?.componentDidDisappear?.();
   }
+
+  public get componenetId() {
+    const id = `component-${this.componentIdCounter}`
+    this.componentIdCounter += 1;
+    return id;
+  }
 }
 
 const nativeNavigationMock = new NativeNavigationMock();
@@ -168,7 +169,7 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
 
       constructor(props: any, context: any) {
         super(props, context);
-        nativeNavigationMock.push("__START_COMPONENT__", { component: props.component });
+        nativeNavigationMock.push("__DEFAULT_STACK__", { component: props.component });
       }
 
       state = {
@@ -177,13 +178,13 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
 
       UNSAFE_componentWillMount() {
         nativeNavigationMock.addEventListener(
-          Event.NEW_SCREEN,
+          Event.PUSH_SCREEN,
           this.handleNewScreenEvent
         );
       }
       componentWillUnmount() {
         nativeNavigationMock.removeEventListener(
-          Event.NEW_SCREEN,
+          Event.PUSH_SCREEN,
           this.handleNewScreenEvent
         );
       }
@@ -199,7 +200,7 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
         const Screen = nativeNavigationMock.getRegistedScreen(component.name ?? "not_found")?.componentProvider()
         const { component: comp, ...props } = this.props
         if (Screen) {
-          return <WrappedComponent {...props as unknown as T} Screen={() => <Screen {...component.passProps}/>} />;
+          return <WrappedComponent {...props as unknown as T} Screen={() => <Screen {...component.passProps} componentId={nativeNavigationMock.componenetId}/>} />;
         }
         throw new Error(`No screnn named ${component.name} registered`)
 
