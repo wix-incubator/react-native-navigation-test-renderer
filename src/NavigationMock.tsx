@@ -60,7 +60,7 @@ class NativeNavigationMock {
   }
 
   // https://wix.github.io/react-native-navigation/docs/stack/#interact-with-the-stack-by-componentid
-  pop(componentId: string, mergeOptions?: Options) {
+  pop(componentId?: string, mergeOptions?: Options) {
     // pop the current screen
     const currentScreen = this.screenStack.pop();
 
@@ -181,10 +181,18 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
           Event.PUSH_SCREEN,
           this.handleNewScreenEvent
         );
+        nativeNavigationMock.addEventListener(
+          Event.POP_SCREEN,
+          this.handleNewScreenEvent
+        );
       }
       componentWillUnmount() {
         nativeNavigationMock.removeEventListener(
           Event.PUSH_SCREEN,
+          this.handleNewScreenEvent
+        );
+        nativeNavigationMock.removeEventListener(
+          Event.POP_SCREEN,
           this.handleNewScreenEvent
         );
       }
