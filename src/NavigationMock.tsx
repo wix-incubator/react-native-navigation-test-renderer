@@ -86,6 +86,7 @@ class NativeNavigationMock {
 
   showModal() {}
   setStackRoot() {}
+  addOptionProcessor() {}
   setRoot() {}
   events() {
     return {
