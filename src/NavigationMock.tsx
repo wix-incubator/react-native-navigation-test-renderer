@@ -14,9 +14,15 @@ export interface EventData {
   component: LayoutComponent;
 }
 
+interface ScreenInStack {
+  componentId : string,
+  component : LayoutComponent
+}
+
 class NativeNavigationMock {
-  private screenStack: LayoutComponent[];
+  private screenStack: ScreenInStack[];
   private registedScreens: Map<string | number,{ componentProvider: () => React.ElementType}>;
+  private callbacksByComponentId: Map<string | number,any>;
   private subscribers: { [index in Event]: Callback[] };
   private componentIdCounter = 0;
 
@@ -24,6 +30,7 @@ class NativeNavigationMock {
   constructor() {
     this.screenStack = [];
     this.registedScreens = new Map<string | number, any>();
+    this.callbacksByComponentId = new Map<string | number, any>();
     this.subscribers = {
       [Event.PUSH_SCREEN]: [],
       [Event.POP_SCREEN]: []
@@ -47,35 +54,36 @@ class NativeNavigationMock {
   }
 
   push(componentId: string, { component }: { component: LayoutComponent }) {
-    // call the current screen disappear event
-    this.callComponentDidDisappear(componentId);
+    this.componentIdCounter += 1;
 
-    // push the new screen
-    this.screenStack.push(component);
+    const currentScreenComponentId = this.currentScreen?.componentId;
+    if (currentScreenComponentId) {
+      this.callComponentDidDisappear(currentScreenComponentId);
+    }
 
-    // call the new screen appear event
-    this.callComponentDidAppear(component.name);
+    this.screenStack.push({ componentId : this.componenetId, component });
 
     this.dispatchEvent(Event.PUSH_SCREEN, { component });
   }
 
   // https://wix.github.io/react-native-navigation/docs/stack/#interact-with-the-stack-by-componentid
   pop(componentId?: string, mergeOptions?: Options) {
+    this.componentIdCounter -= 1;
     // pop the current screen
-    const currentScreen = this.screenStack.pop();
+    const currentComponentId = this.screenStack.pop()?.componentId;
 
-    // call the current screen disappear event
-    this.callComponentDidDisappear(currentScreen?.name ?? "");
+    if (currentComponentId){
+      this.callComponentDidDisappear(currentComponentId);
+      this.callbacksByComponentId.delete(currentComponentId)
+    }
 
     const newScreen = this.currentScreen;
-
-    // call the new screen appear event
-    this.callComponentDidAppear(newScreen.name);
-
-    this.dispatchEvent(Event.POP_SCREEN, {
-      component: newScreen
-    });
-    return this.currentScreen;
+    if (newScreen){
+      this.dispatchEvent(Event.POP_SCREEN, {
+        component: newScreen.component
+      });
+    }
+    return newScreen;
   }
 
   registerComponent(componentName: string, componentProvider: () => React.ElementType) {
@@ -84,26 +92,44 @@ class NativeNavigationMock {
     });
   }
 
-  showModal() {}
+  showModal(params) {
+    const currentScreen = this.currentScreen
+    if (currentScreen){
+      this.push(currentScreen.componentId, {component : params.stack.children[0].component})
+    }
+  }
+
+  dismissModal(){
+    this.pop();
+  }
+
   setStackRoot() {}
   addOptionProcessor() {}
   setRoot() {}
-  events() {
+  mergeOptions() {}
+  bindComponent = (component) => {
+    var arr = this.callbacksByComponentId.get(component.props.componentId)
+    if (!arr) arr = []
+    const didAppearCallback = component.componentDidAppear?.bind(component)
+    arr.push({
+      componentDidAppear: didAppearCallback,
+      componentDidDisappear: component.componentDidDisappear?.bind(
+        component
+      ),
+      isMounted: component.updater.isMounted
+    })
+    this.callbacksByComponentId.set(component.props.componentId, arr)
+    didAppearCallback?.()
+
+  }
+  events = () => {
     return {
-      registerCommandListener: () => {},
-      registerModalDismissedListener: () => {},
-      bindComponent: (component: any) => {
-        // // First time appear
-        // component?.componentDidAppear?.();
-        // this.registedScreens.set(component.props.componentId, {
-        //   componentDidAppear: component.componentDidAppear?.bind(component),
-        //   componentDidDisappear: component.componentDidDisappear?.bind(
-        //     component
-        //   ),
-        //   isMounted: component.updater.isMounted
-        // });
-      }
-    };
+      registerCommandListener: () => {
+      },
+      registerModalDismissedListener: () => {
+      },
+      bindComponent: this.bindComponent
+    }
   }
 
   getCurrentComponent(screens: any[], component: LayoutComponent) {
@@ -118,8 +144,13 @@ class NativeNavigationMock {
     }
   }
 
-  get currentScreen() {
-    return this.screenStack[this.screenStack.length - 1];
+  get currentScreen() : ScreenInStack | undefined{
+    if (this.screenStack.length > 0){
+      return this.screenStack[this.screenStack.length - 1];
+    } else{
+      return undefined;
+    }
+
   }
 
   getRegistedScreen(name: string | number) {
@@ -128,20 +159,25 @@ class NativeNavigationMock {
 
   private callComponentDidAppear(componentId: string | number) {
     // call the current screen disappear event
-    const component = this.registedScreens.get(String(componentId));
-    // component?.componentDidAppear?.();
+    const componentArr = this.callbacksByComponentId.get(componentId);
+    componentArr?.forEach((component) => {
+      component?.componentDidAppear?.();
+    })
   }
 
   private callComponentDidDisappear(componentId: string | number) {
-    // call the current screen disappear event
-    const component = this.registedScreens.get(String(componentId));
-    // component?.componentDidDisappear?.();
+    const componentArr = this.callbacksByComponentId.get(componentId);
+    componentArr.forEach((component) => {
+      component?.componentDidDisappear?.();
+    })
   }
 
   public get componenetId() {
-    const id = `component-${this.componentIdCounter}`
-    this.componentIdCounter += 1;
+    const id = `component-${this.componentIdCounter}`;
     return id;
+  }
+  public addToStack(componentId, { component }) {
+    this.screenStack.push({componentId, component});
   }
 }
 
@@ -170,7 +206,7 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
 
       constructor(props: any, context: any) {
         super(props, context);
-        nativeNavigationMock.push("__DEFAULT_STACK__", { component: props.component });
+        nativeNavigationMock.addToStack(nativeNavigationMock.componenetId, { component: props.component })
       }
 
       state = {
