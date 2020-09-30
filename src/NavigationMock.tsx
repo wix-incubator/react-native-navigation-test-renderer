@@ -102,6 +102,7 @@ class NativeNavigationMock {
   }
 
   setStackRoot() {}
+  addOptionProcessor() {}
   setRoot() {}
   addOptionProcessor() { }
   mergeOptions() {}
