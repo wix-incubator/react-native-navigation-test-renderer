@@ -57,7 +57,9 @@ class NativeNavigationMock {
     this.componentIdCounter += 1;
 
     const currentScreenComponentId = this.currentScreen?.componentId;
-    if (currentScreenComponentId) this.callComponentDidDisappear(currentScreenComponentId);
+    if (currentScreenComponentId) {
+      this.callComponentDidDisappear(currentScreenComponentId);
+    }
 
     this.screenStack.push({ componentId : this.componenetId, component });
 
@@ -104,7 +106,6 @@ class NativeNavigationMock {
   setStackRoot() {}
   addOptionProcessor() {}
   setRoot() {}
-  addOptionProcessor() { }
   mergeOptions() {}
   bindComponent = (component) => {
     var arr = this.callbacksByComponentId.get(component.props.componentId)
