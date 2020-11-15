@@ -1,5 +1,5 @@
 import React from "react";
-import { Text } from 'react-native';
+import {Button} from 'react-native';
 import { LayoutComponent, Options } from "react-native-navigation";
 import { Subtract } from 'utility-types';
 
@@ -116,7 +116,8 @@ class NativeNavigationMock {
       componentDidDisappear: component.componentDidDisappear?.bind(
         component
       ),
-      isMounted: component.updater.isMounted
+      isMounted: component.updater.isMounted,
+      navigationButtonPressed : component.navigationButtonPressed?.bind(component),
     })
     this.callbacksByComponentId.set(component.props.componentId, arr)
     didAppearCallback?.()
@@ -179,6 +180,13 @@ class NativeNavigationMock {
   public addToStack(componentId, { component }) {
     this.screenStack.push({componentId, component});
   }
+
+  onNavBarPressed(componentId, buttonId){
+    const componentArr = this.callbacksByComponentId.get(componentId);
+    componentArr?.forEach((component) => {
+      component?.navigationButtonPressed?.({buttonId});
+    });
+  }
 }
 
 const nativeNavigationMock = new NativeNavigationMock();
@@ -240,12 +248,34 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
         });
       };
 
+      parseOptions= (options : Options, componentId) => {
+        var btnsArray : JSX.Element[] = []
+        options?.topBar?.rightButtons?.forEach((button) => {
+          const btn = this.parseButton(button, componentId)
+          if (btn) btnsArray.push(btn)
+        })
+        return btnsArray
+      }
+
+      parseButton = (button, componentId) => {
+        if (button.id && button.text && button.testID){
+          return <Button testID={button.testID} key={button.id} title={button.text} onPress={() => nativeNavigationMock.onNavBarPressed(componentId, button.id)}/>
+        } else {
+          return undefined
+        }
+      }
+
       render() {
         const component = this.state.currentComponent || this.props.component;
         const Screen = nativeNavigationMock.getRegistedScreen(component.name ?? "not_found")?.componentProvider()
         const { component: comp, ...props } = this.props
-        if (Screen) {
-          return <WrappedComponent {...props as unknown as T} Screen={() => <Screen {...component.passProps} componentId={nativeNavigationMock.componenetId}/>} />;
+        if (Screen !== undefined) {
+          // @ts-ignore
+          const navBarComponent = this.parseOptions(Screen.options(), nativeNavigationMock.componenetId) || {}
+          return (<>
+              {navBarComponent}
+              <WrappedComponent {...props as unknown as T} Screen={() => <Screen {...component.passProps} componentId={nativeNavigationMock.componenetId}/>} />;
+              </>)
         }
         throw new Error(`No screnn named ${component.name} registered`)
 
