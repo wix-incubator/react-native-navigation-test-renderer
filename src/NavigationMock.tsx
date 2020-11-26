@@ -258,10 +258,16 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
       }
 
       parseButton = (button, componentId) => {
-        if (button.id && button.text && button.testID){
-          return <Button testID={button.testID} key={button.id} title={button.text} onPress={() => nativeNavigationMock.onNavBarPressed(componentId, button.id)}/>
+        if (button.id && button.testID) {
+          if (button.text || button.icon) {
+            return <Button testID={button.testID} key={button.id} title={button.text || button.icon.toString()} onPress={() => nativeNavigationMock.onNavBarPressed(componentId, button.id)}/>
+          } else {
+            console.warn(`ParseOptions: TopBarButton ${button.id} must have "icon" or "text" props`)
+            return undefined;
+          }
         } else {
-          return undefined
+          console.warn(`ParseOptions: TopBarButton ${button.id} must have "id" and "testID" props`)
+          return undefined;
         }
       }
 
