@@ -1,5 +1,5 @@
 import React from "react";
-import {Button} from 'react-native';
+import {Button, Text} from 'react-native';
 import { LayoutComponent, Options } from "react-native-navigation";
 import { Subtract } from 'utility-types';
 
@@ -249,12 +249,18 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
       };
 
       parseOptions= (options : Options, componentId) => {
-        var btnsArray : JSX.Element[] = []
+        var btnsAndTitleArray : JSX.Element[] = []
         options?.topBar?.rightButtons?.forEach((button) => {
           const btn = this.parseButton(button, componentId)
-          if (btn) btnsArray.push(btn)
+          if (btn) btnsAndTitleArray.push(btn)
         })
-        return btnsArray
+        options?.topBar?.leftButtons?.forEach((button) => {
+          const btn = this.parseButton(button, componentId)
+          if (btn) btnsAndTitleArray.push(btn)
+        })
+        const  title = options?.topBar?.title?.text;
+        if (title) btnsAndTitleArray.push(<Text>{title}</Text>);
+        return btnsAndTitleArray
       }
 
       parseButton = (button, componentId) => {
