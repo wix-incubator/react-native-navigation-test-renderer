@@ -95,6 +95,7 @@ class NativeNavigationMock {
   showModal(params) {
     const currentScreen = this.currentScreen
     if (currentScreen){
+      Object.assign(params.stack.children[0].component?.passProps, {command: "showModal"});
       this.push(currentScreen.componentId, {component : params.stack.children[0].component})
     }
   }
@@ -279,10 +280,12 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
 
       render() {
         const component = this.state.currentComponent || this.props.component;
+        const asModal = component.passProps?.isModal;
         const Screen = nativeNavigationMock.getRegistedScreen(component.name ?? "not_found")?.componentProvider()
         const { component: comp, ...props } = this.props
         if (Screen !== undefined) {
           // @ts-ignore
+          asModal ? Object.assign(component.passProps, {command: "showModal"}): null;
           const navBarComponent = Screen.options ? this.parseOptions(Screen.options(component.passProps), nativeNavigationMock.componenetId) : undefined;
           return (<>
               {navBarComponent}
