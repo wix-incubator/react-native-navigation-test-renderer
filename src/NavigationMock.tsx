@@ -1,5 +1,5 @@
 import React from "react";
-import {Button} from 'react-native';
+import {Button, Text} from 'react-native';
 import { LayoutComponent, Options } from "react-native-navigation";
 import { Subtract } from 'utility-types';
 
@@ -95,6 +95,7 @@ class NativeNavigationMock {
   showModal(params) {
     const currentScreen = this.currentScreen
     if (currentScreen){
+      Object.assign(params.stack.children[0].component?.passProps, {command: "showModal"});
       this.push(currentScreen.componentId, {component : params.stack.children[0].component})
     }
   }
@@ -249,12 +250,18 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
       };
 
       parseOptions= (options : Options, componentId) => {
-        var btnsArray : JSX.Element[] = []
+        var btnsAndTitleArray : JSX.Element[] = []
         options?.topBar?.rightButtons?.forEach((button) => {
           const btn = this.parseButton(button, componentId)
-          if (btn) btnsArray.push(btn)
+          if (btn) btnsAndTitleArray.push(btn)
         })
-        return btnsArray
+        options?.topBar?.leftButtons?.forEach((button) => {
+          const btn = this.parseButton(button, componentId)
+          if (btn) btnsAndTitleArray.push(btn)
+        })
+        const  title = options?.topBar?.title?.text;
+        if (title) btnsAndTitleArray.push(<Text>{title}</Text>);
+        return btnsAndTitleArray
       }
 
       parseButton = (button, componentId) => {
@@ -273,10 +280,12 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
 
       render() {
         const component = this.state.currentComponent || this.props.component;
+        const asModal = component.passProps?.isModal;
         const Screen = nativeNavigationMock.getRegistedScreen(component.name ?? "not_found")?.componentProvider()
         const { component: comp, ...props } = this.props
         if (Screen !== undefined) {
           // @ts-ignore
+          asModal ? Object.assign(component.passProps, {command: "showModal"}): null;
           const navBarComponent = Screen.options ? this.parseOptions(Screen.options(component.passProps), nativeNavigationMock.componenetId) : undefined;
           return (<>
               {navBarComponent}
