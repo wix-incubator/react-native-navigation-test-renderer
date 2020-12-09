@@ -169,7 +169,7 @@ class NativeNavigationMock {
 
   private callComponentDidDisappear(componentId: string | number) {
     const componentArr = this.callbacksByComponentId.get(componentId);
-    componentArr.forEach((component) => {
+    componentArr?.forEach((component) => {
       component?.componentDidDisappear?.();
     })
   }
