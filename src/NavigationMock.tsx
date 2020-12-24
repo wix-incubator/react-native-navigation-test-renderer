@@ -219,32 +219,46 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
       }
 
       state = {
-        currentComponent: undefined
+        currentComponent: undefined,
+        allScreens: []
       };
 
       UNSAFE_componentWillMount() {
         nativeNavigationMock.addEventListener(
           Event.PUSH_SCREEN,
-          this.handleNewScreenEvent
+          this.handleNewPushScreenEvent
         );
         nativeNavigationMock.addEventListener(
           Event.POP_SCREEN,
-          this.handleNewScreenEvent
+          this.handleNewPopScreenEvent
         );
       }
       componentWillUnmount() {
         nativeNavigationMock.removeEventListener(
           Event.PUSH_SCREEN,
-          this.handleNewScreenEvent
+          this.handleNewPushScreenEvent
         );
         nativeNavigationMock.removeEventListener(
           Event.POP_SCREEN,
-          this.handleNewScreenEvent
+          this.handleNewPopScreenEvent
         );
       }
 
-      handleNewScreenEvent = (e: EventData) => {
+      handleNewPushScreenEvent = (e) => {
+        const prevScreen = this.state.currentComponent || this.props.component;
         this.setState({
+          //@ts-ignore
+          allScreens: [...this.state.allScreens, prevScreen],
+          currentComponent: e.component
+        });
+      };
+
+      handleNewPopScreenEvent = (e: EventData) => {
+        let newArrScreens = [...this.state.allScreens];
+        newArrScreens.splice(-1, 1);
+        this.setState({
+          //@ts-ignore
+          allScreens: newArrScreens,
           currentComponent: e.component
         });
       };
@@ -278,6 +292,24 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
         }
       }
 
+      createScreenToRender = (component) => {
+        const asModal = component.passProps?.isModal;
+        const Screen = nativeNavigationMock.getRegistedScreen(component.name ?? "not_found")?.componentProvider();
+        const { component: comp, ...props } = this.props;
+        if (Screen !== undefined) {
+          asModal ? Object.assign(component.passProps, { command: "showModal" }) : null;
+          // @ts-ignore
+          const navBarComponent = Screen.options ? this.parseOptions(Screen.options(component.passProps), nativeNavigationMock.componenetId) : undefined;
+          // @ts-ignore
+          const wrappedComponent = <WrappedComponent {...props} Screen={() => <Screen {...component.passProps} componentId={nativeNavigationMock.componenetId}/>}/>;
+          return (<>
+            {navBarComponent}
+            {wrappedComponent}
+          </>);
+        }
+        throw new Error(`No screnn named ${component.name} registered`);
+      }
+
       render() {
         const component = this.state.currentComponent || this.props.component;
         // @ts-ignore
@@ -288,10 +320,10 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
           asModal ? Object.assign(component.passProps, {command: "showModal"}): null;
           // @ts-ignore
           const navBarComponent = Screen.options ? this.parseOptions(Screen.options(component.passProps), nativeNavigationMock.componenetId) : undefined;
-          return (<>
-              {navBarComponent}
-              <WrappedComponent {...props as unknown as T} Screen={() => <Screen {...component.passProps} componentId={nativeNavigationMock.componenetId}/>} />;
-              </>)
+          const currentScreenToRender = this.createScreenToRender(component);
+          let screensToRender = Array.from(this.state.allScreens).map(screen => this.createScreenToRender(screen));
+          screensToRender.push(currentScreenToRender);
+          return (<>{screensToRender}</>);
         }
         throw new Error(`No screnn named ${component.name} registered`)
 
