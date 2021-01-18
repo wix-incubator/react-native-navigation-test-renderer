@@ -1,6 +1,6 @@
 import React from "react";
 import {Button, Text} from 'react-native';
-import { LayoutComponent, Options } from "react-native-navigation";
+import {LayoutComponent, NavigationButtonPressedEvent, Options} from "react-native-navigation";
 import { Subtract } from 'utility-types';
 
 
@@ -25,6 +25,7 @@ class NativeNavigationMock {
   private callbacksByComponentId: Map<string | number,any>;
   private subscribers: { [index in Event]: Callback[] };
   private componentIdCounter = 0;
+  private navigationButtonPressListeners = new Set<(event: NavigationButtonPressedEvent) => void>();
 
 
   constructor() {
@@ -130,6 +131,14 @@ class NativeNavigationMock {
       },
       registerModalDismissedListener: () => {
       },
+      registerNavigationButtonPressedListener: (callback: (event: NavigationButtonPressedEvent) => void) => {
+        this.navigationButtonPressListeners.add(callback);
+        return {
+          remove: () => {
+            this.navigationButtonPressListeners.delete(callback);
+          }
+        }
+      },
       bindComponent: this.bindComponent
     }
   }
@@ -187,6 +196,7 @@ class NativeNavigationMock {
     componentArr?.forEach((component) => {
       component?.navigationButtonPressed?.({buttonId});
     });
+    this.navigationButtonPressListeners.forEach(listener => listener({componentId, buttonId}));
   }
 }
 
