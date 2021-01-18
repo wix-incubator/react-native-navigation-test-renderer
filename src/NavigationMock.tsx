@@ -287,7 +287,8 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
         if (Screen !== undefined) {
           asModal ? Object.assign(component.passProps, {command: "showModal"}): null;
           // @ts-ignore
-          const navBarComponent = Screen.options ? this.parseOptions(Screen.options(component.passProps), nativeNavigationMock.componenetId) : undefined;
+          const options = Screen.options?.(component.passProps) ?? component.options;
+          const navBarComponent = options ? this.parseOptions(options, nativeNavigationMock.componenetId) : undefined;
           return (<>
               {navBarComponent}
               <WrappedComponent {...props as unknown as T} Screen={() => <Screen {...component.passProps} componentId={nativeNavigationMock.componenetId}/>} />;
