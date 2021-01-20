@@ -3,8 +3,6 @@ import {Button, Text} from 'react-native';
 import {Layout, LayoutComponent, NavigationButtonPressedEvent, Options} from "react-native-navigation";
 import { Subtract } from 'utility-types';
 
-type LayoutWithCommand = LayoutComponent<{command : string}>
-
 enum Event {
   PUSH_SCREEN = "push_screen",
   POP_SCREEN = "pop_screen"
@@ -12,12 +10,12 @@ enum Event {
 
 type Callback = (data: EventData) => void;
 export interface EventData {
-  component: LayoutWithCommand;
+  component: LayoutComponent<any>;
 }
 
 interface ScreenInStack {
   componentId : string,
-  component : LayoutWithCommand
+  component : LayoutComponent<any>
 }
 
 type LayoutProcessorCallback = (layout: Layout, commandName: string) => Layout
@@ -59,7 +57,7 @@ class NativeNavigationMock {
     });
   }
 
-  push(componentId: string, { component }: { component: LayoutWithCommand }) {
+  push(componentId: string, { component }: { component: LayoutComponent<any> }) {
     this.componentIdCounter += 1;
 
     const currentScreenComponentId = this.currentScreen?.componentId;
@@ -151,7 +149,7 @@ class NativeNavigationMock {
     }
   }
 
-  getCurrentComponent(screens: any[], component: LayoutWithCommand) {
+  getCurrentComponent(screens: any[], component: LayoutComponent<any>) {
     const screen = screens.find(item => item.id === component.name);
     if (screen) {
       const Component = screen.generator();
@@ -222,11 +220,11 @@ export interface InjectedNavigationProps {
   Screen: React.ComponentType
 }
 export interface NavigationProps {
-  component: LayoutWithCommand;
+  component: LayoutComponent<any>;
 }
 
 export interface NavigationState {
-  currentComponent?: LayoutWithCommand;
+  currentComponent?: LayoutComponent<any>;
 }
 
 export function withNativeNavigation<T extends InjectedNavigationProps>(
