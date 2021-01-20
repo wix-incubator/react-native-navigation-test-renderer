@@ -1,8 +1,9 @@
 import React from "react";
 import {Button, Text} from 'react-native';
-import {LayoutComponent, NavigationButtonPressedEvent, Options} from "react-native-navigation";
+import {Layout, LayoutComponent, NavigationButtonPressedEvent, Options} from "react-native-navigation";
 import { Subtract } from 'utility-types';
 
+type LayoutWithCommand = LayoutComponent<{command : string}>
 
 enum Event {
   PUSH_SCREEN = "push_screen",
@@ -11,13 +12,15 @@ enum Event {
 
 type Callback = (data: EventData) => void;
 export interface EventData {
-  component: LayoutComponent;
+  component: LayoutWithCommand;
 }
 
 interface ScreenInStack {
   componentId : string,
-  component : LayoutComponent
+  component : LayoutWithCommand
 }
+
+type LayoutProcessorCallback = (layout: Layout, commandName: string) => Layout
 
 class NativeNavigationMock {
   private screenStack: ScreenInStack[];
@@ -26,12 +29,14 @@ class NativeNavigationMock {
   private subscribers: { [index in Event]: Callback[] };
   private componentIdCounter = 0;
   private navigationButtonPressListeners = new Set<(event: NavigationButtonPressedEvent) => void>();
+  private layoutProcessorCallbacks : LayoutProcessorCallback[]
 
 
   constructor() {
     this.screenStack = [];
     this.registedScreens = new Map<string | number, any>();
     this.callbacksByComponentId = new Map<string | number, any>();
+    this.layoutProcessorCallbacks = []
     this.subscribers = {
       [Event.PUSH_SCREEN]: [],
       [Event.POP_SCREEN]: []
@@ -54,7 +59,7 @@ class NativeNavigationMock {
     });
   }
 
-  push(componentId: string, { component }: { component: LayoutComponent }) {
+  push(componentId: string, { component }: { component: LayoutWithCommand }) {
     this.componentIdCounter += 1;
 
     const currentScreenComponentId = this.currentScreen?.componentId;
@@ -106,7 +111,10 @@ class NativeNavigationMock {
   }
 
   setStackRoot() {}
-  addOptionProcessor() {}
+  addLayoutProcessor(callback : LayoutProcessorCallback) {
+    this.layoutProcessorCallbacks.push(callback)
+  }
+  addOptionProcessor () {}
   setRoot() {}
   mergeOptions() {}
   bindComponent = (component) => {
@@ -143,7 +151,7 @@ class NativeNavigationMock {
     }
   }
 
-  getCurrentComponent(screens: any[], component: LayoutComponent) {
+  getCurrentComponent(screens: any[], component: LayoutWithCommand) {
     const screen = screens.find(item => item.id === component.name);
     if (screen) {
       const Component = screen.generator();
@@ -198,6 +206,12 @@ class NativeNavigationMock {
     });
     this.navigationButtonPressListeners.forEach(listener => listener({componentId, buttonId}));
   }
+
+  processLayout(component,command){
+    this.layoutProcessorCallbacks.forEach(callback => {
+      callback({component}, command)
+    })
+  }
 }
 
 const nativeNavigationMock = new NativeNavigationMock();
@@ -208,11 +222,11 @@ export interface InjectedNavigationProps {
   Screen: React.ComponentType
 }
 export interface NavigationProps {
-  component: LayoutComponent;
+  component: LayoutWithCommand;
 }
 
 export interface NavigationState {
-  currentComponent?: LayoutComponent ;
+  currentComponent?: LayoutWithCommand;
 }
 
 export function withNativeNavigation<T extends InjectedNavigationProps>(
@@ -296,9 +310,14 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
         const { component: comp, ...props } = this.props
         if (Screen !== undefined) {
           asModal ? Object.assign(component.passProps, {command: "showModal"}): null;
+
           // @ts-ignore
-          const options = Screen.options?.(component.passProps) ?? component.options;
-          const navBarComponent = options ? this.parseOptions(options, nativeNavigationMock.componenetId) : undefined;
+          const screenOptions = Screen.options?.(component.passProps)
+          if (screenOptions){
+            component.options = screenOptions
+          }
+          nativeNavigationMock.processLayout(component, component?.passProps?.command);
+          const navBarComponent = component.options ? this.parseOptions(component.options, nativeNavigationMock.componenetId) : undefined;
           return (<>
               {navBarComponent}
               <WrappedComponent {...props as unknown as T} Screen={() => <Screen {...component.passProps} componentId={nativeNavigationMock.componenetId}/>} />;
