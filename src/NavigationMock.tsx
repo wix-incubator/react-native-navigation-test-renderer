@@ -282,7 +282,7 @@ export function withNativeNavigation<T extends InjectedNavigationProps>(
           if (btn) btnsAndTitleArray.push(btn)
         })
         const  title = options?.topBar?.title?.text;
-        if (title) btnsAndTitleArray.push(<Text>{title}</Text>);
+        if (title) btnsAndTitleArray.push(<Text key={title}>{title}</Text>);
         return btnsAndTitleArray
       }
 
