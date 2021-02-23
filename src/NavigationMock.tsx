@@ -207,7 +207,14 @@ class NativeNavigationMock {
 
   processLayout(component,command){
     this.layoutProcessorCallbacks.forEach(callback => {
-      callback({component}, command)
+      // we need to do this since ui-lib checks specifically for stack.children[0] so passing
+      // component is not enough
+      const params = {
+        stack : {
+          children : [{ component }]
+        }
+      }
+      callback(params, command);
     })
   }
 }
