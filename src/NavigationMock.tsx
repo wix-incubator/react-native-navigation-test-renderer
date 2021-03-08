@@ -135,6 +135,8 @@ class NativeNavigationMock {
     return {
       registerCommandListener: () => {
       },
+      registerComponentListener: () => {
+      },
       registerModalDismissedListener: () => {
       },
       registerNavigationButtonPressedListener: (callback: (event: NavigationButtonPressedEvent) => void) => {
