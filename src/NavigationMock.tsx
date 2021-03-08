@@ -136,6 +136,7 @@ class NativeNavigationMock {
       registerCommandListener: () => {
       },
       registerComponentListener: () => {
+        return {remove : () => {}}
       },
       registerModalDismissedListener: () => {
       },
