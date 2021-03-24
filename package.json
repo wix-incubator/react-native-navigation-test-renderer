@@ -1,6 +1,6 @@
 {
   "name": "react-native-navigation-test-renderer",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "license": "MIT",
   "description": "Allows developers to render RNN screens without depending on the native hierarchy maintained by RNN.",
   "author": {
