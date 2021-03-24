@@ -133,6 +133,9 @@ class NativeNavigationMock {
   }
   events = () => {
     return {
+      registerComponentDidAppearListener: ()=>{
+        return { remove: () => { } };
+      },
       registerCommandListener: () => {
       },
       registerComponentListener: () => {
