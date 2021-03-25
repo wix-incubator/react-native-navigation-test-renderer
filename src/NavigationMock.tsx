@@ -97,15 +97,28 @@ class NativeNavigationMock {
   }
 
   showModal(params) {
-    const currentScreen = this.currentScreen
-    if (currentScreen){
-      Object.assign(params.stack.children[0].component?.passProps, {command: "showModal"});
-      this.push(currentScreen.componentId, {component : params.stack.children[0].component})
+    const currentScreen = this.currentScreen;
+    const component = params.stack.children[0].component;
+    if (currentScreen && component){
+      component.passProps = component.passProps || {};
+      component.options = component.options || {};
+      component.options.modal = component.options.modal || {};
+      component.passProps.command = "showModal";
+      this.push(currentScreen.componentId, {
+        component : params.stack.children[0].component,
+      })
     }
   }
 
   dismissModal(){
     this.pop();
+  }
+
+  dismissAllModals() {
+    let screen;
+    do {
+      screen = this.pop()
+    } while (screen?.component?.options?.modal);
   }
 
   setStackRoot() {}
