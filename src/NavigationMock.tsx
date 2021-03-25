@@ -116,9 +116,9 @@ class NativeNavigationMock {
   setRoot() {}
   mergeOptions() {}
   bindComponent = (component) => {
-    var arr = this.callbacksByComponentId.get(component.props.componentId)
-    if (!arr) arr = []
-    const didAppearCallback = component.componentDidAppear?.bind(component)
+    let arr = this.callbacksByComponentId.get(component.props.componentId);
+    if (!arr) arr = [];
+    const didAppearCallback = component.componentDidAppear?.bind(component);
     arr.push({
       componentDidAppear: didAppearCallback,
       componentDidDisappear: component.componentDidDisappear?.bind(
@@ -126,16 +126,27 @@ class NativeNavigationMock {
       ),
       isMounted: component.updater.isMounted,
       navigationButtonPressed : component.navigationButtonPressed?.bind(component),
-    })
-    this.callbacksByComponentId.set(component.props.componentId, arr)
-    didAppearCallback?.()
-
-  }
+    });
+    this.callbacksByComponentId.set(component.props.componentId, arr);
+    didAppearCallback?.();
+  };
   events = () => {
     return {
       registerCommandListener: () => {
       },
-      registerComponentListener: () => {
+      registerComponentListener: (listener, componentId) => {
+        let arr = this.callbacksByComponentId.get(componentId);
+        if (!arr) {
+          arr = [];
+        }
+        arr.push({
+          componentDidAppear: listener?.componentDidAppear,
+          // componentDidDisappear: listener?.componentDidDisappear,
+          // isMounted: component.updater.isMounted,
+          navigationButtonPressed : listener?.navigationButtonPressed,
+        });
+        this.callbacksByComponentId.set(componentId, arr);
+        listener?.componentDidAppear?.();
         return {remove : () => {}}
       },
       registerModalDismissedListener: () => {
