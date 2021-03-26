@@ -2,6 +2,7 @@ import React from "react";
 import {Button, Text} from 'react-native';
 import {Layout, LayoutComponent, NavigationButtonPressedEvent, Options} from "react-native-navigation";
 import { Subtract } from 'utility-types';
+import {ComponentDidAppearEvent} from "react-native-navigation/lib/src/interfaces/ComponentEvents";
 
 enum Event {
   PUSH_SCREEN = "push_screen",
@@ -18,6 +19,8 @@ interface ScreenInStack {
   component : LayoutComponent<any>
 }
 
+type didAppearCallback =  (event: ComponentDidAppearEvent) => void
+
 type LayoutProcessorCallback = (layout: Layout, commandName: string) => Layout
 
 class NativeNavigationMock {
@@ -28,6 +31,7 @@ class NativeNavigationMock {
   private componentIdCounter = 0;
   private navigationButtonPressListeners = new Set<(event: NavigationButtonPressedEvent) => void>();
   private layoutProcessorCallbacks : LayoutProcessorCallback[]
+  private didAppearCallbacks : didAppearCallback[] = []
 
 
   constructor() {
@@ -129,11 +133,15 @@ class NativeNavigationMock {
     });
     this.callbacksByComponentId.set(component.props.componentId, arr);
     didAppearCallback?.();
+    this.callDidAppearCallbacks();
   };
   events = () => {
     return {
-      registerComponentDidAppearListener: ()=>{
-        return { remove: () => { } };
+      registerComponentDidAppearListener: (callback : didAppearCallback)=>{
+        this.didAppearCallbacks.push(callback)
+        return { remove: () => {
+            this.didAppearCallbacks = this.didAppearCallbacks.filter((arrCallback) => arrCallback !== callback)
+          } };
       },
       registerCommandListener: () => {
       },
@@ -150,6 +158,7 @@ class NativeNavigationMock {
         });
         this.callbacksByComponentId.set(componentId, arr);
         listener?.componentDidAppear?.();
+        this.callDidAppearCallbacks();
         return {remove : () => {}}
       },
       registerModalDismissedListener: () => {
@@ -163,6 +172,15 @@ class NativeNavigationMock {
         }
       },
       bindComponent: this.bindComponent
+    }
+  }
+
+  callDidAppearCallbacks() {
+    const currentScreen = this.currentScreen
+    if (currentScreen){
+      this.didAppearCallbacks.forEach(callback => {
+        callback({componentId : currentScreen.componentId, componentType: "Component", componentName: currentScreen.component.name as string} )
+      })
     }
   }
 
