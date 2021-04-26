@@ -252,6 +252,10 @@ class NativeNavigationMock {
       callback(params, command);
     })
   }
+
+  constants() {
+    return {statusBarHeight: 20, topBarHeight: 30, bottomTabsHeight: 40};
+  }
 }
 
 const nativeNavigationMock = new NativeNavigationMock();
